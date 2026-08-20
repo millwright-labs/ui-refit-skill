@@ -40,8 +40,10 @@ What a refit actively hunts, roughly in order of visual payoff:
 
 - Dated visual tokens: era-marker gradients and bevels, tiny body text, system-default
   typefaces used by inertia, harsh pure-black-on-pure-white or low-contrast gray-on-gray.
-- Missing interaction states: hover, focus-visible, active, disabled, loading, empty, error.
-  Adding absent states is always in scope — it changes no existing behavior.
+- Missing interaction states. Absent presentation states (hover, focus-visible, active,
+  disabled styling) are always in scope — pure CSS, no behavior change. States that need new
+  runtime logic (loading, empty, error flows) get proposed as named follow-ups, never added
+  silently.
 - Off-scale spacing: values that ignore the project's grid (or the absence of any grid).
 - Cliché patterns from `anti-defaults.md` — both the 2010s kind and the current
   AI-default kind.
@@ -57,8 +59,9 @@ What a refit actively hunts, roughly in order of visual payoff:
 - After every slice: exercise the affected flows (or run the project's tests), then commit.
   A refit is a series of small provable wins, not one big reveal.
 - End with three artifacts: a what-changed / what-stayed summary keyed to the preserve
-  list, the validator's output (`python scripts/validate_ui.py <changed files>` from the
-  skill directory), and before/after screenshots when a browser is available.
+  list, the validator's output (`python <skill-dir>/scripts/validate_ui.py <changed files>`,
+  where `<skill-dir>` is the directory containing SKILL.md), and before/after screenshots
+  when a browser is available.
 
 ## Theming contract
 

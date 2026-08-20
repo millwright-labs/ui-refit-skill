@@ -9,7 +9,7 @@ primary-source numbers move much slower.
 ## Method
 
 We read the files, not the READMEs: SKILL.md, reference documents, data files, and scripts
-for ten skills, official and community. Quotes were checked against the repos, and every
+for eleven skills, official and community. Quotes were checked against the repos, and every
 judging number below was verified against the standard or researcher that published it. Where
 a page could not be fetched directly (Material Design's site renders client-side), the number
 is marked with its corroboration instead of presented as first-hand.
@@ -97,6 +97,11 @@ template for a self-contained skill, but two of its rules travel well: describe 
 rather than adjectives when reproducing an existing page, and never let a reworded request
 silently trigger an expensive cold re-analysis.
 
+**brand-guidelines and canvas-design (Anthropic).** The remaining two: a fixed brand-token
+table applied mechanically, and a static poster-art skill. Narrow on purpose, and the first
+one settled a design decision by example — brand tokens live in their own small skill, kept
+apart from aesthetic judgment, which is why ui-refit ships without any brand data baked in.
+
 ## The judging framework
 
 Four buckets, from measured-with-users down to checkable-by-script. ui-refit encodes buckets
@@ -119,8 +124,10 @@ visible focus (2.4.7); animation on transform/opacity with reduced-motion honore
 
 **D. Performance and accessibility as UX:** LCP ≤2.5s, INP ≤200ms, CLS ≤0.1 at the 75th
 percentile (web.dev); reflow at 320px (1.4.10); text-spacing survival (1.4.12); status never
-carried by color alone (1.4.1). The European Accessibility Act has applied to EU-facing
-services since 28 June 2025, so the AA rows above are now legal exposure, not preference.
+carried by color alone (1.4.1). The European Accessibility Act has applied since 28 June
+2025 to the consumer services it scopes (e-commerce among them, with microenterprise and
+grace-period exemptions) — for in-scope services, the AA rows above are a legal requirement,
+not a preference.
 
 ## Findings that became design decisions
 

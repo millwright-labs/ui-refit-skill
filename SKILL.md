@@ -40,7 +40,7 @@ component conventions — read them before proposing anything) → this skill's 
 | Pointer target | ≥ 24×24 CSS px; touch ≥ 44pt / 48dp | WCAG 2.5.8 · HIG · M3 |
 | Body text | 15–25px, ≥16px in inputs | Butterick · mobile zoom |
 | Line length | 45–90 chars (`max-width: 65ch`) | Butterick |
-| Line height | 1.4–1.6 body · ~1.2 headings | Butterick |
+| Line height | 1.4–1.6 body · ~1.2 headings | M3 (16/24 body) · WCAG 1.4.12 |
 | Spacing | 4/8px scale | M3 |
 | Animation | transform/opacity only, properties listed explicitly, reduced-motion honored | WCAG 2.3.3 · web.dev |
 | Focus | visible indicator on every focusable element | WCAG 2.4.7 |

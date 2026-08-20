@@ -53,9 +53,9 @@ to pass. The skill treats a FAIL as unfinished work: fixed, or explicitly accept
 
 ## Why it exists
 
-Before writing this skill we deep-read ten UI/UX skills for Claude Code — the official ones,
-the most-installed community ones, and the best-sourced ones we could find — and pulled the
-judging numbers from primary sources (WCAG 2.2, Nielsen Norman Group, ISO
+Before writing this skill we deep-read eleven UI/UX skills for Claude Code — the official
+ones, the most-installed community ones, and the best-sourced ones we could find — and
+pulled the judging numbers from primary sources (WCAG 2.2, Nielsen Norman Group, ISO
 9241, Apple HIG, Material 3, web.dev, Practical Typography). Full writeup:
 [docs/RESEARCH.md](docs/RESEARCH.md). The short version — generation-time taste, review-time
 rigor, and a validator that can fail you never lived in one skill, and none of them promised

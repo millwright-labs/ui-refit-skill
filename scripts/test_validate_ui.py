@@ -81,6 +81,72 @@ assert "spacing-grid" in ids(run(".a{gap: 7px;}"), "WARN")
 # cliche-color: near-miss within Euclidean distance 16 still fires
 assert "cliche-color" in ids(run(".a{color:#8A5DF5;}"), "WARN")
 
+# --- review-fix regression tests ---
+
+# fix 1: custom-property case sensitivity (--FG != --fg)
+assert "contrast" in ids(
+    run(":root{--FG:#777;--BG:#888;} .a{color:var(--FG);background:var(--BG);}"), "FAIL"
+)  # fire: uppercase names must not be silently lowercased away from their usage
+assert "contrast" in ids(
+    run(":root{--Fg:#777;--Bg:#888;} .a{color:var(--Fg);background:var(--Bg);}"), "FAIL"
+)  # control: mixed-case defined/used consistently still resolves
+assert "contrast" not in ids(
+    run(":root{--FG:#777;} .a{color:var(--fg);background:#888;}")
+)  # control: var(--fg) with only --FG defined is unresolvable -> skip, no finding
+
+# fix 2: background vs background-color -- later declaration wins
+assert "contrast" in ids(
+    run(".a{background-color:#fff;background:#888;color:#777}"), "FAIL"
+)  # fire: background written last -> effective bg is #888
+assert "contrast" not in ids(
+    run(".a{background:#888;background-color:#fff;color:#111}")
+)  # control: background-color written last -> effective bg is #fff
+
+# fix 3: font-size units beyond px for the large-text 3:1 threshold
+assert "contrast" not in ids(
+    run(".h{color:#8A8A8A;background:#fff;font-size:2rem;}"), "FAIL"
+)  # control: 2rem = 32px @ 16px base -> large-text threshold applies, passes
+assert "contrast" in ids(
+    run(".h{color:#8A8A8A;background:#fff;font-size:1rem;}"), "FAIL"
+)  # fire: 1rem = 16px -> body-size threshold (4.5:1), fails
+
+# fix 4: focus-visible replacement must itself be visible
+assert "focus-visible" in ids(
+    run("button{outline:none;} button:focus-visible{outline:none;}"), "FAIL"
+)  # fire: the "safety net" rule also removes the outline -- not a real replacement
+assert "focus-visible" not in ids(
+    run("button{outline:none;} button:focus{outline:2px solid #000;}")
+)  # control: :focus (not just :focus-visible) with a real outline still counts
+
+# fix 5a: @charset / @import statements are stripped, not misparsed
+assert "transition-all" in ids(
+    run("@import url(x.css); .a{transition:all .2s}"), "FAIL"
+)  # fire: leading @import must not derail parsing of the following rule
+assert run('@charset "UTF-8"; .a{color:#111;background:#fff}') == []
+# control: @charset + a clean rule -> no findings at all (no parse WARN, no misparse)
+
+# fix 5b: @media nested one level deeper (media within media) is flattened
+assert "transition-all" in ids(
+    run("@media screen{@media (min-width:600px){.a{transition:all .2s}}}"), "FAIL"
+)  # fire: doubly-nested @media rule must still be checked
+assert run(
+    "@media screen{@media (min-width:600px){.a{color:#111;background:#fff;}}}"
+) == []  # control: doubly-nested @media with passing colors -> no findings
+
+# fix 5c: unbalanced braces surface a parse WARN instead of a silent clean pass
+assert "parse" in ids(run(".a{color:#777;background:#888"), "WARN")
+# fire: unclosed rule
+assert "parse" not in ids(run(".a{color:#111;background:#fff;}"))
+# control: balanced input never gets the parse WARN
+
+# fix 6: gradient stops join the cliche-color scan
+assert "cliche-color" in ids(
+    run(".hero{background:linear-gradient(135deg,#8B5CF6,#6366F1);}"), "WARN"
+)  # fire: the exact purple-gradient-hero cliche
+assert "cliche-color" not in ids(
+    run(".hero{background:linear-gradient(#1E6B41,#165231);}")
+)  # control: an unrelated green gradient must not fire
+
 # CLI exit codes via subprocess on temp files
 with tempfile.TemporaryDirectory() as d:
     bad = Path(d, "bad.css")
@@ -98,16 +164,18 @@ with tempfile.TemporaryDirectory() as d:
         [sys.executable, str(REPO_ROOT / "scripts" / "validate_ui.py"), d + "_does_not_exist"]
     ).returncode == 0
 
-print("all validator tests passed")
-
 # cliche-color also scans custom-property definitions (token sheets)
 assert "cliche-color" in ids(run(":root{--hero:#8B5CF6;}"), "WARN")
 assert "cliche-color" not in ids(run(":root{--brand:#0E6B5C;}"))
-print("custom-prop cliche tests passed")
 
 # warm-bias gate: cool/green off-whites near cream are NOT the cliche
 assert "cliche-color" in ids(run(".hero{background:#F4F1EA;}"), "WARN")
 assert "cliche-color" not in ids(run(":root{--bg:#F7F7F5;}"))
 assert "cliche-color" not in ids(run(":root{--ink:#F2F4F8;}"))
 assert "cliche-color" not in ids(run(":root{--paper:#F2F5EC;}"))
-print("warm-bias cliche tests passed")
+
+# Every assert in this file has run by this point -- print the single
+# success line last, not before earlier sections' asserts had a chance to
+# fail (previously this printed right after the CLI subprocess block, with
+# more asserts still to come below it).
+print("all validator tests passed")

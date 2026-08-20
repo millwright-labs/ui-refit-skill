@@ -73,7 +73,8 @@ Practical Typography · (WIG) = adapted from Vercel's Web Interface Guidelines (
 
 ## Typography
 
-- MUST: Body text 15–25px with line-height 1.4–1.6; headings ~1.1–1.3. (Butterick)
+- MUST: Body text 15–25px (Butterick) with line-height 1.4–1.6 (M3 sets body at 16/24);
+  headings ~1.1–1.3.
 - MUST: Reading measure 45–90 characters — `max-width: 65ch` is the workhorse. (Butterick)
 - SHOULD: One type scale with a fixed ratio; at most two typeface families plus a utility mono.
 - SHOULD: `text-wrap: balance` on headings; `font-variant-numeric: tabular-nums` where digits align.
