@@ -126,8 +126,9 @@ visible focus (2.4.7); animation on transform/opacity with reduced-motion honore
 percentile (web.dev); reflow at 320px (1.4.10); text-spacing survival (1.4.12); status never
 carried by color alone (1.4.1). The European Accessibility Act has applied since 28 June
 2025 to the consumer services it scopes (e-commerce among them, with microenterprise and
-grace-period exemptions) — for in-scope services, the AA rows above are a legal requirement,
-not a preference.
+grace-period exemptions). Its technical baseline, EN 301 549, builds on WCAG 2.1 AA — so for
+in-scope services most of the AA rows above carry legal weight, while the WCAG 2.2 additions
+(target size, focus-not-obscured) remain best practice rather than mandate.
 
 ## Findings that became design decisions
 

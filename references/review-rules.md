@@ -1,6 +1,9 @@
 # Review rules
 
-The ruleset for Review mode, and the checklist Refit/Design runs before calling work done.
+The ruleset for Review mode, and the checklist Refit/Design runs before calling work done —
+each mode checks the rules that apply to what it touched. A rule about behavior the current
+mode leaves frozen (Refit never adds runtime logic) becomes a finding to report, never a
+blocker for the mode's own work.
 Source tags: (WCAG x.x.x) = WCAG 2.2 success criterion · (HIG) = Apple Human Interface
 Guidelines · (M3) = Material Design 3 · (web.dev) = Core Web Vitals · (Butterick) =
 Practical Typography · (WIG) = adapted from Vercel's Web Interface Guidelines (MIT).
@@ -73,8 +76,8 @@ Practical Typography · (WIG) = adapted from Vercel's Web Interface Guidelines (
 
 ## Typography
 
-- MUST: Body text 15–25px (Butterick) with line-height 1.4–1.6 (M3 sets body at 16/24);
-  headings ~1.1–1.3.
+- MUST: Body text 15–25px (Butterick) with line-height around 1.5 — M3 sets body at 16/24,
+  Butterick's print range is 1.2–1.45; headings ~1.1–1.3.
 - MUST: Reading measure 45–90 characters — `max-width: 65ch` is the workhorse. (Butterick)
 - SHOULD: One type scale with a fixed ratio; at most two typeface families plus a utility mono.
 - SHOULD: `text-wrap: balance` on headings; `font-variant-numeric: tabular-nums` where digits align.
@@ -91,7 +94,9 @@ Practical Typography · (WIG) = adapted from Vercel's Web Interface Guidelines (
 
 ## Performance
 
-- MUST: LCP ≤ 2.5s, INP ≤ 200ms, CLS ≤ 0.1 at the 75th percentile. (web.dev)
+- MUST: LCP ≤ 2.5s, INP ≤ 200ms, CLS ≤ 0.1 at the 75th percentile. (web.dev) These three
+  are field metrics — in a static code review, mark them not-checkable unless measurement
+  data exists; the rules below are code-checkable.
 - MUST: Images declare `width`/`height` or `aspect-ratio` so nothing shifts on load.
 - SHOULD: Virtualize lists beyond ~50–100 rows. (WIG)
 - SHOULD: Lazy-load below-the-fold images; preload the LCP image.
@@ -105,7 +110,7 @@ Review mode reads; it never edits. The report is:
 1. One line of stated assumptions (platform, primary user, primary task) — guessed if
    unstated, and labeled as guesses.
 2. Findings grouped by file as `path:line`, each tagged:
-   - **P0** — breaks task completion or violates a MUST above.
+   - **P0** — breaks task completion, or violates a MUST or NEVER above.
    - **P1** — real friction; a SHOULD violation with user-visible cost.
    - **P2** — polish.
 3. Every P0/P1 opens with a one-line diagnosis before its fix: an **execution** problem

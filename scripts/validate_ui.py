@@ -19,25 +19,61 @@ was found across all inputs, prints `ABSTAIN: no checkable CSS found` and
 exits 0 (abstain is neither pass nor fail -- stated honestly, never silent).
 
 Checks (see docs/superpowers/specs/2026-08-19-ui-refit-skill-design.md
-"Validator design" for the full table): contrast, transition-all,
-layout-anim, focus-visible (all FAIL); reduced-motion, spacing-grid,
-type-scale, cliche-color, parse (all WARN).
+"Validator design" for the full table): transition-all, layout-anim,
+focus-visible (always FAIL); reduced-motion, spacing-grid, type-scale,
+cliche-color, parse (always WARN); contrast is normally FAIL, but see the
+em-ambiguous case below, where it emits a WARN instead.
 
 Parser behavior:
     - `@charset ...;` and `@import ...;` statements are stripped before
       block splitting (neither has a `{...}` body, so left in place they
-      derail the following block's prelude/body split).
+      derail the following block's prelude/body split). The match is
+      quote-aware: a `;` inside a `"..."` / `'...'` string (e.g. a query
+      string in an @import URL) does not terminate the statement early.
     - `@media` blocks are flattened up to two levels deep (@media nested
-      inside @media), in addition to the plain one-level case.
-    - If brace depth never returns to zero (malformed/truncated CSS), a
-      `parse` WARN is emitted instead of silently reporting a clean result;
-      recoverable declarations before the imbalance are still checked.
+      inside @media), in addition to the plain one-level case. A
+      `@keyframes` block nested inside `@media` is also collected (routed
+      into the same keyframe_props list as top-level @keyframes), so
+      layout-anim still sees it.
+    - If brace depth never returns to zero -- either an opening brace with
+      no matching close, or a stray extra closing brace -- a `parse` WARN
+      is emitted instead of silently reporting a clean result; recoverable
+      declarations before the imbalance are still checked.
 
 Font-size units: `px` is read directly; `rem`/`em` are converted to px
 using a documented, fixed 16px root-font-size assumption (no actual
 cascade/rem-root tracking); `pt` uses the fixed CSS conversion of
 1pt = 4/3px. This only feeds the contrast check's large-text (>=24px or
->=18.66px-and-bold) 3:1 threshold.
+>=18.66px-and-bold) 3:1 threshold. `em` is additionally flagged as
+ambiguous: unlike `rem`/`pt`/`px`, `em` is relative to the *parent*
+element's font-size, not a fixed root, so "this resolves to >=24px" is a
+much weaker assumption. When an `em`-sized declaration's large-text
+qualification is the only thing keeping a borderline ratio (>=3.0 and
+<4.5) from failing, the contrast check downgrades that silent pass into a
+WARN instead -- it still hard-FAILs below 3:1, and still stays silent at
+or above 4.5:1 (passes even the strict body-text threshold, so the em
+assumption doesn't matter).
+
+Contrast check, background resolution: when a rule declares both
+`background` and `background-color`, the later declaration in source
+order wins (real CSS cascade behavior within one rule). If that later
+declaration is a gradient/url()/an unresolvable var(), the pair is
+skipped (abstained on) rather than falling back to an earlier
+`background`/`background-color` declaration -- the later, unknowable value
+is what actually renders, so a resolvable earlier value would be reporting
+on the wrong thing.
+
+Focus-visible check, selector-affinity heuristic: a `:focus-visible`/
+`:focus` rule only suppresses the removed-outline FAIL for a given
+outline-removing rule if the two rules share a "base token" (the first
+simple selector, e.g. `button` out of `button:hover` or `button.btn`), or
+the focus rule is a bare `:focus-visible`/`*:focus-visible` (applies to
+everything). This is a coarse heuristic with no real cascade or
+specificity knowledge -- it does not resolve descendant combinators,
+`:is()`/`:where()`, multiple comma-separated selectors beyond a literal
+per-part comparison, or actual DOM structure, so it can still both under-
+and over-approximate versus a real browser's applicable-rules
+computation.
 
 Cliche-color rule: a color is flagged when its Euclidean RGB distance to a
 known AI-default (see references/anti-defaults.md) is strictly less than
@@ -109,7 +145,9 @@ CLICHE_SCAN_PROPS = {
 COMMENT_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
 AT_MEDIA_RE = re.compile(r"^@media\b", re.IGNORECASE)
 AT_KEYFRAMES_RE = re.compile(r"^@(-\w+-)?keyframes\b", re.IGNORECASE)
-AT_IMPORT_CHARSET_RE = re.compile(r"@(?:charset|import)\b[^;]*;", re.IGNORECASE)
+AT_IMPORT_CHARSET_RE = re.compile(
+    r"@(?:charset|import)\b(?:\"[^\"]*\"|'[^']*'|[^\"';])*;", re.IGNORECASE
+)
 VAR_RE = re.compile(r"^var\(\s*(--[\w-]+)\s*(?:,\s*(.*))?\)$", re.IGNORECASE)
 OUTLINE_NONE_RE = re.compile(r"^(none|0)(\s*!important)?$", re.IGNORECASE)
 SPACING_PROP_RE = re.compile(r"^(margin|padding)(-[\w-]+)?$|^(gap|row-gap|column-gap)$")
@@ -119,6 +157,7 @@ FONT_SIZE_UNIT_RE = re.compile(r"^([\d.]+)\s*(px|rem|em|pt)$", re.IGNORECASE)
 ANIM_DECL_RE = re.compile(r"\b(animation|transition)(-[\w-]+)?\s*:", re.IGNORECASE)
 STYLE_BLOCK_RE = re.compile(r"<style[^>]*>(.*?)</style>", re.DOTALL | re.IGNORECASE)
 GRADIENT_HEX_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b")
+SELECTOR_HEAD_RE = re.compile(r"[^\s>+~]+")
 
 
 # ---------------------------------------------------------------------------
@@ -259,7 +298,9 @@ def _split_blocks(text):
     aware, so nested braces inside body don't terminate the block early).
 
     Returns (blocks, unbalanced): unbalanced is True if any block's opening
-    brace never found its matching close before the end of input."""
+    brace never found its matching close before the end of input, OR a
+    stray closing brace is found outside of any open block (depth would go
+    negative at the top scanning level -- e.g. a duplicated trailing '}')."""
     blocks = []
     unbalanced = False
     n = len(text)
@@ -283,6 +324,13 @@ def _split_blocks(text):
             blocks.append((prelude, body))
             i = j
             start = j
+        elif c == "}":
+            # A '}' with no '{' opened at this scanning level -- an extra
+            # closing brace. Drop it and keep scanning rather than folding
+            # it into the next block's prelude text.
+            unbalanced = True
+            i += 1
+            start = i
         else:
             i += 1
     return blocks, unbalanced
@@ -325,19 +373,36 @@ def _maybe_collect_custom_props(selector, decls, custom_props):
             custom_props.setdefault(prop, []).append(val)
 
 
-def _flatten_media_body(body, custom_props, rules, remaining_depth):
+def _parse_keyframes_block(prelude, body):
+    """Parse an @keyframes block's stops into a (prelude, set_of_props)
+    entry for keyframe_props. Returns (entry, unbalanced)."""
+    props_seen = set()
+    stop_blocks, unbalanced = _split_blocks(body)
+    for _stop_sel, stop_body in stop_blocks:
+        for prop, _val in _parse_decls(stop_body):
+            props_seen.add(prop)
+    return (prelude, props_seen), unbalanced
+
+
+def _flatten_media_body(body, custom_props, rules, keyframe_props, remaining_depth):
     """Walk the body of an @media block, adding ordinary selector blocks to
-    `rules` and recursing into a further-nested @media block (up to
-    `remaining_depth` extra levels -- @media within @media). Returns True if
-    any brace imbalance was found within this body."""
+    `rules`, routing any nested @keyframes block into `keyframe_props` (so
+    layout-anim still sees it), and recursing into a further-nested @media
+    block (up to `remaining_depth` extra levels -- @media within @media).
+    Returns True if any brace imbalance was found within this body."""
     blocks, unbalanced = _split_blocks(body)
     for sel, sbody in blocks:
         if not sel:
             continue
+        if AT_KEYFRAMES_RE.match(sel):
+            entry, kf_unbalanced = _parse_keyframes_block(sel, sbody)
+            unbalanced = unbalanced or kf_unbalanced
+            keyframe_props.append(entry)
+            continue
         if AT_MEDIA_RE.match(sel):
             if remaining_depth > 0:
                 nested_unbalanced = _flatten_media_body(
-                    sbody, custom_props, rules, remaining_depth - 1
+                    sbody, custom_props, rules, keyframe_props, remaining_depth - 1
                 )
                 unbalanced = unbalanced or nested_unbalanced
             continue
@@ -385,16 +450,14 @@ def parse_css(text):
         if not prelude:
             continue
         if AT_KEYFRAMES_RE.match(prelude):
-            props_seen = set()
-            stop_blocks, stop_unbalanced = _split_blocks(body)
-            unbalanced = unbalanced or stop_unbalanced
-            for _stop_sel, stop_body in stop_blocks:
-                for prop, _val in _parse_decls(stop_body):
-                    props_seen.add(prop)
-            keyframe_props.append((prelude, props_seen))
+            entry, kf_unbalanced = _parse_keyframes_block(prelude, body)
+            unbalanced = unbalanced or kf_unbalanced
+            keyframe_props.append(entry)
             continue
         if AT_MEDIA_RE.match(prelude):
-            media_unbalanced = _flatten_media_body(body, custom_props, rules, 1)
+            media_unbalanced = _flatten_media_body(
+                body, custom_props, rules, keyframe_props, 1
+            )
             unbalanced = unbalanced or media_unbalanced
             continue
         if prelude.startswith("@"):
@@ -455,7 +518,15 @@ def _font_size_to_px(value):
 
 
 def _contrast_threshold(decls):
+    """Return (threshold, em_ambiguous). em_ambiguous is True only when the
+    large-text (3:1) relaxation for this declaration was granted on the
+    strength of an `em` font-size specifically. `em` is relative to the
+    *parent* element's font-size, not a fixed root (unlike rem/pt/px), so
+    the assumed-16px-base large-text qualification is much less trustworthy
+    here -- callers use this to downgrade a borderline pass into a WARN
+    instead of staying silent."""
     threshold = 4.5
+    em_ambiguous = False
     bold = False
     fw = decls.get("font-weight")
     if fw:
@@ -472,11 +543,13 @@ def _contrast_threshold(decls):
     if fs:
         px = _font_size_to_px(fs)
         if px is not None:
-            if px >= 24:
+            is_large = px >= 24 or (px >= 18.66 and bold)
+            if is_large:
                 threshold = 3.0
-            elif px >= 18.66 and bold:
-                threshold = 3.0
-    return threshold
+                unit_m = FONT_SIZE_UNIT_RE.match(fs.strip())
+                if unit_m and unit_m.group(2).lower() == "em":
+                    em_ambiguous = True
+    return threshold, em_ambiguous
 
 
 def _check_contrast(rule, custom_props):
@@ -510,13 +583,24 @@ def _check_contrast(rule, custom_props):
         return []
 
     ratio = contrast_ratio(c1[:3], c2[:3])
-    threshold = _contrast_threshold(decls)
+    threshold, em_ambiguous = _contrast_threshold(decls)
     if ratio < threshold:
         detail = (
             f"color {decls['color']} on {bg_prop}:{bg_val} "
             f"= {ratio:.2f}:1, needs {threshold}:1"
         )
         return [Finding("FAIL", "contrast", rule["selector"], detail)]
+    if em_ambiguous and ratio < 4.5:
+        # Passes only because an `em` font-size was assumed large (16px
+        # base) and got the relaxed 3:1 threshold; em is parent-relative,
+        # so that assumption may not hold -- flag instead of staying silent.
+        detail = (
+            f"color {decls['color']} on {bg_prop}:{bg_val} = {ratio:.2f}:1 -- "
+            f"passes the 3:1 large-text threshold only if font-size:{decls['font-size']} "
+            "resolves to a large size; em is relative to the parent font-size, "
+            "not a fixed 16px root, so this is unverified"
+        )
+        return [Finding("WARN", "contrast", rule["selector"], detail)]
     return []
 
 
@@ -576,9 +660,41 @@ def _has_visible_focus_indicator(decls):
     return False
 
 
+def _base_selector_token(selector):
+    """The 'base token' of a single (comma-free) selector: its leftmost
+    simple/compound selector with any pseudo-class/pseudo-element stripped
+    off. E.g. 'button:hover' / 'button::before' -> 'button', 'button.btn'
+    -> 'button.btn', '.link:focus-visible' -> '.link', ':focus-visible' /
+    '*:focus-visible' -> '' (treated as a universal match by callers)."""
+    sel = selector.strip()
+    m = SELECTOR_HEAD_RE.match(sel)
+    head = m.group(0) if m else sel
+    base = head.split(":", 1)[0].strip()
+    if base == "*":
+        base = ""
+    return base
+
+
+def _selector_parts(selector):
+    return [p.strip() for p in selector.split(",") if p.strip()]
+
+
+def _focus_rule_covers(offending_selector, focus_selector):
+    """Selector-affinity heuristic (see module docstring): a focus rule
+    only counts as a safety net for a given outline-removing rule if they
+    share a base token, or the focus rule is a bare
+    :focus-visible/*:focus-visible (matches everything)."""
+    off_bases = {_base_selector_token(p) for p in _selector_parts(offending_selector)}
+    for fp in _selector_parts(focus_selector):
+        fb = _base_selector_token(fp)
+        if fb == "" or fb in off_bases:
+            return True
+    return False
+
+
 def _check_focus_visible(rules):
     offending = []
-    safety_net = False
+    focus_rules = []
     for rule in rules:
         sel_low = rule["selector"].lower()
         decls = dict(rule["decls"])
@@ -586,18 +702,23 @@ def _check_focus_visible(rules):
             offending.append(rule["selector"])
         if ":focus-visible" in sel_low or ":focus" in sel_low:
             if _has_visible_focus_indicator(decls):
-                safety_net = True
-    if offending and not safety_net:
-        return [
-            Finding(
-                "FAIL",
-                "focus-visible",
-                sel,
-                "outline removed with no :focus-visible/:focus alternative in scope",
+                focus_rules.append(rule["selector"])
+
+    findings = []
+    for off_sel in offending:
+        covered = any(_focus_rule_covers(off_sel, fr_sel) for fr_sel in focus_rules)
+        if not covered:
+            findings.append(
+                Finding(
+                    "FAIL",
+                    "focus-visible",
+                    off_sel,
+                    "outline removed with no :focus-visible/:focus alternative in scope "
+                    "(selector-affinity heuristic: no matching base-token or bare "
+                    ":focus-visible/*:focus-visible rule found)",
+                )
             )
-            for sel in offending
-        ]
-    return []
+    return findings
 
 
 def _check_reduced_motion(text):

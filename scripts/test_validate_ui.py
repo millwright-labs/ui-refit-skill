@@ -147,6 +147,59 @@ assert "cliche-color" not in ids(
     run(".hero{background:linear-gradient(#1E6B41,#165231);}")
 )  # control: an unrelated green gradient must not fire
 
+# --- second-pass review-fix regression tests ---
+
+# fix A (focus-visible selector-affinity heuristic): a suppressing rule
+# only counts if it shares a base token with the outline-removing rule, or
+# is a bare :focus-visible/*:focus-visible.
+assert "focus-visible" in ids(
+    run("button{outline:none;} .link:focus-visible{outline:2px solid #000;}"), "FAIL"
+)  # fire: unrelated selector must not suppress the FAIL
+assert "focus-visible" not in ids(
+    run("button{outline:none;} button:focus-visible{outline:2px solid #000;}")
+)  # control: same base token ('button') suppresses
+assert "focus-visible" not in ids(
+    run("button{outline:none;} :focus-visible{outline:2px solid #000;}")
+)  # control: bare :focus-visible always suppresses
+
+# fix B (parser gap a: @keyframes nested inside @media is collected)
+assert "layout-anim" in ids(
+    run("@media screen{@keyframes slide{from{left:0}to{left:100px}}}"), "FAIL"
+)  # fire: nested @keyframes animating a layout property must still FAIL
+assert "layout-anim" not in ids(
+    run("@media screen{@keyframes fade{from{opacity:0}to{opacity:1}}}"), "FAIL"
+)  # control: nested @keyframes animating a non-layout property must not
+
+# fix C (parser gap b: extra closing brace also flags unbalanced)
+assert "parse" in ids(run(".a{color:#777;background:#888}}"), "WARN")
+# fire: stray trailing '}'
+assert "parse" not in ids(run(".a{color:#111}.b{color:#222}"), "WARN")
+# control: two consecutive, properly balanced blocks
+
+# fix D (@import/@charset stripping is quote-aware)
+assert "transition-all" in ids(
+    run('@import url("x.css?a=1;b=2"); .a{transition:all .2s}'), "FAIL"
+)  # fire: a ';' inside the quoted URL must not truncate the statement early
+assert "parse" not in ids(
+    run('@import url("x.css?a=1;b=2"); .a{transition:all .2s}'), "WARN"
+)  # same fire case: parsing must recover cleanly, no spurious parse WARN
+assert run('@charset "utf-8;still-inside"; .a{color:#111;background:#fff}') == []
+# control: a ';' inside a quoted @charset value doesn't derail the next rule either
+
+# fix E (em font-size large-text qualification is ambiguous, not a silent pass)
+assert "contrast" in ids(
+    run(".h{color:#8A8A8A;background:#fff;font-size:2em;}"), "WARN"
+)  # fire: em-assumed-large borderline ratio -> WARN, not a silent pass
+assert "contrast" not in ids(
+    run(".h{color:#8A8A8A;background:#fff;font-size:2em;}"), "FAIL"
+)  # same fire case: must not be a hard FAIL either
+assert "contrast" not in ids(
+    run(".h{color:#8A8A8A;background:#fff;font-size:2rem;}")
+)  # control: rem is not ambiguous -> stays a fully silent pass (no WARN either)
+assert "contrast" in ids(
+    run(".h{color:#8A8A8A;background:#fff;font-size:1rem;}"), "FAIL"
+)  # control: below the large-text size -> still a hard FAIL regardless of unit
+
 # CLI exit codes via subprocess on temp files
 with tempfile.TemporaryDirectory() as d:
     bad = Path(d, "bad.css")

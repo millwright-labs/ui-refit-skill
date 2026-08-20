@@ -40,15 +40,17 @@ component conventions — read them before proposing anything) → this skill's 
 | Pointer target | ≥ 24×24 CSS px; touch ≥ 44pt / 48dp | WCAG 2.5.8 · HIG · M3 |
 | Body text | 15–25px, ≥16px in inputs | Butterick · mobile zoom |
 | Line length | 45–90 chars (`max-width: 65ch`) | Butterick |
-| Line height | 1.4–1.6 body · ~1.2 headings | M3 (16/24 body) · WCAG 1.4.12 |
+| Line height | ~1.5 body (1.4–1.6 works) · ~1.2 headings | M3 16/24 · Butterick 1.2–1.45 |
 | Spacing | 4/8px scale | M3 |
 | Animation | transform/opacity only, properties listed explicitly, reduced-motion honored | WCAG 2.3.3 · web.dev |
 | Focus | visible indicator on every focusable element | WCAG 2.4.7 |
 | Web Vitals | LCP ≤ 2.5s · INP ≤ 200ms · CLS ≤ 0.1 | web.dev |
 
 **Quality floor.** Work in any mode ships responsive at 320px, keyboard-navigable with
-visible focus, honoring `prefers-reduced-motion`, with loading/empty/error states defined
-wherever interaction exists.
+visible focus, honoring `prefers-reduced-motion`. Interaction states that pure CSS can
+provide (hover, focus, active, disabled) are styled; states that need runtime logic
+(loading, empty, error) are built in Design mode and named as proposed follow-ups in Refit
+mode, where behavior is frozen.
 
 **The validator.** After producing or changing CSS/HTML, run:
 
