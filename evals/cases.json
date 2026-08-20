@@ -1,0 +1,124 @@
+{
+  "skill_name": "ui-refit",
+  "notes": "Behavioral eval cases. Each case runs in a fresh agent session with the skill installed. Assertions are judged against the agent's full transcript and any files it wrote. 'behavior' = judged from the transcript; 'artifact' = judged from files. Baseline (no-skill) results for cases 1 and 4 are recorded in RESULTS.md as controls.",
+  "evals": [
+    {
+      "id": "gate-holds",
+      "name": "Functional question does not trigger a redesign",
+      "mode_expected": "none",
+      "prompt": "Read evals/fixtures/dated-app/index.html and styles.css. When I click 'Open Jobs' in the nav, none of the open-job badges get the orange highlight. Why not, and what's the fix? Do not edit any files - just explain.",
+      "files": ["evals/fixtures/dated-app/index.html", "evals/fixtures/dated-app/styles.css"],
+      "assertions": [
+        {"kind": "behavior", "text": "The response answers the filter bug (link sends filter=open, script checks filter=active) with a correct fix."},
+        {"kind": "behavior", "text": "The response contains at most two sentences about visual design, shaped as an observation plus an offer - no restyled code, no unrequested redesign plan."},
+        {"kind": "artifact", "text": "No files were created or modified."}
+      ]
+    },
+    {
+      "id": "refit-preserves",
+      "name": "Refit changes the look, not the contract surface",
+      "mode_expected": "refit",
+      "prompt": "This job tracker looks like it was built in 2012. Refresh it - modern, clean, professional. Work directly on evals/fixtures/dated-app/ (a scratch copy; edit freely).",
+      "files": ["evals/fixtures/dated-app/index.html", "evals/fixtures/dated-app/styles.css"],
+      "assertions": [
+        {"kind": "behavior", "text": "A preserve list is stated to the user before the first file edit."},
+        {"kind": "artifact", "text": "Route hrefs (/jobs?filter=open, /jobs?filter=closed, /dashboard, /customers, /reports), form field names (job_name, customer_email, job_notes), data-analytics values (submit-job, submit-job-btn), and data-testid=job-row are byte-identical after the refit."},
+        {"kind": "artifact", "text": "Nav labels and the filter-highlighting script behavior are unchanged."},
+        {"kind": "artifact", "text": "The dated tells are gone: no transition: all, no outline: none without a :focus-visible replacement, body text at least 15px, contrast failures fixed."},
+        {"kind": "behavior", "text": "The close includes a what-changed/what-stayed summary and validator output."}
+      ]
+    },
+    {
+      "id": "plan-then-critique",
+      "name": "Token plan and self-critique appear before code",
+      "mode_expected": "refit",
+      "prompt": "Refresh the look of evals/fixtures/dated-app/ (scratch copy; edit freely). Make it feel current.",
+      "files": ["evals/fixtures/dated-app/index.html", "evals/fixtures/dated-app/styles.css"],
+      "assertions": [
+        {"kind": "behavior", "text": "Before any file edit, the transcript contains a token plan: 4-6 named hex colors, type roles, and one Signature element."},
+        {"kind": "behavior", "text": "The transcript contains an explicit critique of that plan naming at least one revised choice, before implementation."}
+      ]
+    },
+    {
+      "id": "no-cliche-landing",
+      "name": "Greenfield design avoids the named default clusters",
+      "mode_expected": "design",
+      "prompt": "Design a landing page for a new personal-finance web app called Ledgerline (invoices and cash flow for sole proprietors). One self-contained HTML file with embedded CSS, written to a new file landing.html.",
+      "files": [],
+      "assertions": [
+        {"kind": "artifact", "text": "The palette contains no color within RGB distance 16 of #F4F1EA, #F5F1EA, #8B5CF6, #7C3AED, #6366F1, or #A855F7, and the page is not a violet-gradient hero."},
+        {"kind": "artifact", "text": "Body font is not Inter or Space Grotesk, unless the transcript shows the choice was made deliberately with a stated reason."},
+        {"kind": "artifact", "text": "No emoji used as heading or list markers."},
+        {"kind": "behavior", "text": "The plan grounds the design in the subject (sole proprietors, invoices, cash flow), names a Signature element, and runs the validator on the produced file."}
+      ]
+    },
+    {
+      "id": "brand-lock",
+      "name": "Supplied brand tokens are immutable",
+      "mode_expected": "design",
+      "prompt": "Design a signup page for Ledgerline. Our brand color is #7D2E45 and our typeface is Source Serif 4 - both are fixed. One HTML file, signup.html.",
+      "files": [],
+      "assertions": [
+        {"kind": "artifact", "text": "#7D2E45 is the brand/accent color in the output and Source Serif 4 is loaded and used; neither is replaced or 'improved'."},
+        {"kind": "behavior", "text": "The transcript does not re-litigate the brand choices; the plan builds around them."}
+      ]
+    },
+    {
+      "id": "existing-system-respect",
+      "name": "Refit works through the existing token file",
+      "mode_expected": "refit",
+      "prompt": "Freshen up evals/fixtures/tokens-app/ (scratch copy; edit freely) - it feels a bit flat and gray.",
+      "files": ["evals/fixtures/tokens-app/index.html", "evals/fixtures/tokens-app/tokens.css"],
+      "assertions": [
+        {"kind": "behavior", "text": "The transcript acknowledges tokens.css as the existing design system before proposing changes."},
+        {"kind": "artifact", "text": "Visual changes are made by editing token values (and adding tokens); component rules keep consuming var() tokens rather than introducing parallel hardcoded colors."}
+      ]
+    },
+    {
+      "id": "review-read-only",
+      "name": "Review mode reports without editing",
+      "mode_expected": "review",
+      "prompt": "Review the UI of evals/fixtures/dated-app/ - what's wrong with it?",
+      "files": ["evals/fixtures/dated-app/index.html", "evals/fixtures/dated-app/styles.css"],
+      "assertions": [
+        {"kind": "artifact", "text": "No files created or modified."},
+        {"kind": "behavior", "text": "Findings are tagged P0/P1/P2 with file:line references; every P0/P1 has a one-line diagnosis and a concrete fix."},
+        {"kind": "behavior", "text": "The known defects are found: transition: all, outline: none without focus replacement, sub-13px body text, low-contrast #999 body text, and the Submit button's generic label."}
+      ]
+    },
+    {
+      "id": "review-no-invention",
+      "name": "A clean target gets PASS, not padding",
+      "mode_expected": "review",
+      "prompt": "Review the UI of evals/fixtures/clean-app/index.html - anything wrong?",
+      "files": ["evals/fixtures/clean-app/index.html"],
+      "assertions": [
+        {"kind": "behavior", "text": "The verdict is a pass (or near-pass with at most minor P2s); no fabricated P0/P1 findings."},
+        {"kind": "behavior", "text": "The response states what was checked."},
+        {"kind": "artifact", "text": "No files created or modified."}
+      ]
+    },
+    {
+      "id": "validator-invoked",
+      "name": "Validator runs and its output is reported honestly",
+      "mode_expected": "refit",
+      "prompt": "Refresh the look of evals/fixtures/dated-app/ (scratch copy; edit freely).",
+      "files": ["evals/fixtures/dated-app/index.html", "evals/fixtures/dated-app/styles.css"],
+      "assertions": [
+        {"kind": "behavior", "text": "python scripts/validate_ui.py is executed on the changed files during the session."},
+        {"kind": "behavior", "text": "The validator's findings are quoted or summarized accurately in the close; any remaining WARN has a stated disposition."}
+      ]
+    },
+    {
+      "id": "ambiguity-one-line",
+      "name": "Ambiguous request gets a one-line mode announcement",
+      "mode_expected": "any",
+      "prompt": "Here's evals/fixtures/dated-app/ - make it better.",
+      "files": ["evals/fixtures/dated-app/index.html", "evals/fixtures/dated-app/styles.css"],
+      "assertions": [
+        {"kind": "behavior", "text": "The transcript announces the chosen mode in one line before proceeding."},
+        {"kind": "behavior", "text": "Work then follows that mode's process (for refit: preserve list before edits)."}
+      ]
+    }
+  ]
+}
