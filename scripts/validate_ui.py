@@ -61,14 +61,20 @@ NAMED_COLORS = {
 }
 
 # Reviewed: 2026-08-19 — mirror of references/anti-defaults.md
-CLICHE_COLORS = [
+# Cream entries additionally require a warm bias (r >= g >= b, r-b >= 6):
+# the cliché is the WARM off-white; cool/green-tinted papers within the same
+# Euclidean radius are not it, and flagging them makes the check noise.
+CLICHE_CREAMS = [
     "#F4F1EA",  # AI-default cream
     "#F5F1EA",  # AI-default cream (near-duplicate)
+]
+CLICHE_PURPLES = [
     "#8B5CF6",  # AI-default purple/violet gradient family
     "#7C3AED",
     "#6366F1",
     "#A855F7",
 ]
+CLICHE_COLORS = CLICHE_CREAMS + CLICHE_PURPLES
 
 LAYOUT_PROPS = {"top", "left", "right", "bottom", "width", "height"}
 TRANSITION_PROPS = {"transition", "transition-property"}
@@ -144,7 +150,24 @@ def parse_color(value):
     return None
 
 
-CLICHE_RGB = [parse_color(h)[:3] for h in CLICHE_COLORS]
+CLICHE_CREAM_RGB = [parse_color(h)[:3] for h in CLICHE_CREAMS]
+CLICHE_PURPLE_RGB = [parse_color(h)[:3] for h in CLICHE_PURPLES]
+
+
+def _is_warm_offwhite(rgb):
+    r, g, b = rgb
+    return r >= g >= b and (r - b) >= 6
+
+
+def _matches_cliche(rgb):
+    for cref in CLICHE_PURPLE_RGB:
+        if _euclid(rgb, cref) < 16:
+            return True
+    if _is_warm_offwhite(rgb):
+        for cref in CLICHE_CREAM_RGB:
+            if _euclid(rgb, cref) < 16:
+                return True
+    return False
 
 
 def extract_any_color(value):
@@ -530,7 +553,9 @@ def _check_cliche_color(rules):
     seen = set()
     for rule in rules:
         for prop, val in rule["decls"]:
-            if prop not in CLICHE_SCAN_PROPS:
+            # custom properties count too: token-based sheets define their
+            # whole palette in --vars, which would otherwise evade this scan
+            if prop not in CLICHE_SCAN_PROPS and not prop.startswith("--"):
                 continue
             color = extract_any_color(val)
             if color is None:
@@ -538,21 +563,19 @@ def _check_cliche_color(rules):
             r, g, b, a = color
             if a < 1:
                 continue
-            for cref in CLICHE_RGB:
-                if _euclid((r, g, b), cref) < 16:
-                    key = (rule["selector"], prop, val)
-                    if key not in seen:
-                        seen.add(key)
-                        findings.append(
-                            Finding(
-                                "WARN",
-                                "cliche-color",
-                                rule["selector"],
-                                f"{prop}: {val} is close to a common AI-default color "
-                                "(see references/anti-defaults.md) -- fine if deliberately chosen",
-                            )
+            if _matches_cliche((r, g, b)):
+                key = (rule["selector"], prop, val)
+                if key not in seen:
+                    seen.add(key)
+                    findings.append(
+                        Finding(
+                            "WARN",
+                            "cliche-color",
+                            rule["selector"],
+                            f"{prop}: {val} is close to a common AI-default color "
+                            "(see references/anti-defaults.md) -- fine if deliberately chosen",
                         )
-                    break
+                    )
     return findings
 
 

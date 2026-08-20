@@ -99,3 +99,15 @@ with tempfile.TemporaryDirectory() as d:
     ).returncode == 0
 
 print("all validator tests passed")
+
+# cliche-color also scans custom-property definitions (token sheets)
+assert "cliche-color" in ids(run(":root{--hero:#8B5CF6;}"), "WARN")
+assert "cliche-color" not in ids(run(":root{--brand:#0E6B5C;}"))
+print("custom-prop cliche tests passed")
+
+# warm-bias gate: cool/green off-whites near cream are NOT the cliche
+assert "cliche-color" in ids(run(".hero{background:#F4F1EA;}"), "WARN")
+assert "cliche-color" not in ids(run(":root{--bg:#F7F7F5;}"))
+assert "cliche-color" not in ids(run(":root{--ink:#F2F4F8;}"))
+assert "cliche-color" not in ids(run(":root{--paper:#F2F5EC;}"))
+print("warm-bias cliche tests passed")

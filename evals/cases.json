@@ -46,7 +46,7 @@
       "prompt": "Design a landing page for a new personal-finance web app called Ledgerline (invoices and cash flow for sole proprietors). One self-contained HTML file with embedded CSS, written to a new file landing.html.",
       "files": [],
       "assertions": [
-        {"kind": "artifact", "text": "The palette contains no color within RGB distance 16 of #F4F1EA, #F5F1EA, #8B5CF6, #7C3AED, #6366F1, or #A855F7, and the page is not a violet-gradient hero."},
+        {"kind": "artifact", "text": "The validator's cliche-color check reports no findings on the produced file (warm-cream family and violet family, per scripts/validate_ui.py), and the page is not a violet-gradient hero."},
         {"kind": "artifact", "text": "Body font is not Inter or Space Grotesk, unless the transcript shows the choice was made deliberately with a stated reason."},
         {"kind": "artifact", "text": "No emoji used as heading or list markers."},
         {"kind": "behavior", "text": "The plan grounds the design in the subject (sole proprietors, invoices, cash flow), names a Signature element, and runs the validator on the produced file."}
