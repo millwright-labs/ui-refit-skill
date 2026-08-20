@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JobTrack Pro</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">JobTrack Pro</span>
+  <ul class="nav">
+    <li><a href="/dashboard">Dashboard</a></li>
+    <li><a href="/jobs?filter=open">Open Jobs</a></li>
+    <li><a href="/jobs?filter=closed">Closed Jobs</a></li>
+    <li><a href="/customers">Customers</a></li>
+    <li><a href="/reports">Reports</a></li>
+  </ul>
+</div>
+
+<div class="content">
+  <h1>Jobs</h1>
+  <table class="jobs">
+    <tr><th>Job</th><th>Customer</th><th>Status</th><th></th></tr>
+    <tr data-testid="job-row"><td>Porch restoration</td><td>Hendricks</td><td><span class="badge">open</span></td><td><a class="btn small" href="/jobs/101">View</a></td></tr>
+    <tr data-testid="job-row"><td>Window glazing</td><td>Ortiz</td><td><span class="badge">open</span></td><td><a class="btn small" href="/jobs/102">View</a></td></tr>
+    <tr data-testid="job-row"><td>Stair rebuild</td><td>Lam</td><td><span class="badge closed">closed</span></td><td><a class="btn small" href="/jobs/103">View</a></td></tr>
+  </table>
+
+  <h2>Add a job</h2>
+  <form action="/jobs" method="post" data-analytics="submit-job">
+    <label>Job name <input type="text" name="job_name"></label>
+    <label>Customer email <input type="text" name="customer_email"></label>
+    <label>Notes <textarea name="job_notes"></textarea></label>
+    <button class="btn" type="submit" data-analytics="submit-job-btn">Submit</button>
+  </form>
+</div>
+
+<script>
+// Filter highlighting for the jobs nav
+var params = new URLSearchParams(location.search);
+if (params.get('filter') === 'active') {
+  document.querySelectorAll('.badge:not(.closed)').forEach(function (b) {
+    b.classList.add('hot');
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledgerline</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--size-body);
+  line-height: 1.5;
+  margin: 0;
+}
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-3);
+}
+h1 { font-size: var(--size-h1); margin: 0; }
+main { padding: var(--space-4); }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.card .amount { font-size: var(--size-h1); }
+.card .label { color: var(--text-muted); font-size: var(--size-small); }
+button.primary {
+  background: var(--brand);
+  color: var(--brand-ink);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--size-body);
+}
+button.primary:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<header><h1>Ledgerline</h1></header>
+<main>
+  <div class="card">
+    <div class="amount">$12,480</div>
+    <div class="label">Invoiced this month</div>
+  </div>
+  <div class="card">
+    <div class="amount">$3,150</div>
+    <div class="label">Outstanding</div>
+  </div>
+  <button class="primary" type="button">New invoice</button>
+</main>
+</body>
+</html>

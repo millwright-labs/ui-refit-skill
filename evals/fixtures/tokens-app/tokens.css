@@ -1,0 +1,22 @@
+/* Design tokens — single source of truth for Ledgerline */
+:root {
+  /* color */
+  --bg: #F7F7F5;
+  --surface: #FFFFFF;
+  --text: #1A1E23;
+  --text-muted: #555B62;
+  --brand: #7D2E45;
+  --brand-ink: #FFFFFF;
+  --border: #D9DBD6;
+  /* type */
+  --font-body: "Segoe UI", Arial, sans-serif;
+  --size-body: 16px;
+  --size-h1: 25px;
+  --size-small: 13px;
+  /* space */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --radius: 4px;
+}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field Notes</title>
+<style>
+:root {
+  --ground: #FAFAF8;
+  --ink: #21272A;
+  --muted: #4D5358;
+  --accent: #005D5D;
+  --line: #DDE1E6;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #161616;
+    --ink: #F2F4F8;
+    --muted: #A2A9B0;
+    --accent: #3DDBD9;
+    --line: #393939;
+  }
+}
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  line-height: 1.5;
+  margin: 0;
+}
+main { max-width: 65ch; margin: 0 auto; padding: 32px 16px; }
+h1 { font-size: 28px; line-height: 1.2; }
+.note { border-top: 1px solid var(--line); padding: 16px 0; }
+.note time { color: var(--muted); font-size: 14px; }
+a.more {
+  color: var(--accent);
+  display: inline-block;
+  padding: 8px 12px;
+  min-height: 24px;
+  transition: opacity 0.2s;
+}
+a.more:hover { opacity: 0.8; }
+a.more:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  a.more { transition: none; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Field Notes</h1>
+  <article class="note">
+    <time datetime="2026-08-12">August 12</time>
+    <p>Rebuilt the sash weights on the north window. The original pine is still sound after ninety years.</p>
+    <a class="more" href="/notes/sash-weights">Read the full note</a>
+  </article>
+  <article class="note">
+    <time datetime="2026-08-05">August 5</time>
+    <p>Stripped eight layers of paint from the newel post. The walnut underneath was worth every hour.</p>
+    <a class="more" href="/notes/newel-post">Read the full note</a>
+  </article>
+</main>
+</body>
+</html>

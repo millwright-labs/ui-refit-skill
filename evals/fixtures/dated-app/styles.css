@@ -1,0 +1,63 @@
+/* JobTrack Pro — circa 2012 */
+body {
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  color: #999999;
+  background: #ffffff;
+  margin: 0;
+}
+.topbar {
+  background: linear-gradient(#4f81bd, #2d5b93);
+  padding: 7px 13px;
+  border-bottom: 3px ridge #1f3f66;
+}
+.logo {
+  color: #fff;
+  font-weight: bold;
+  font-size: 15px;
+  text-shadow: 1px 1px 2px #000;
+}
+.nav { display: inline; list-style: none; margin: 0 0 0 22px; padding: 0; }
+.nav li { display: inline; margin-right: 13px; }
+.nav a { color: #d8e4f0; text-decoration: none; font-size: 11px; }
+.content { padding: 13px 18px; }
+h1 { font-size: 19px; color: #444; }
+h2 { font-size: 15px; color: #555; }
+.jobs { border-collapse: collapse; width: 100%; }
+.jobs th {
+  background: linear-gradient(#f5f5f5, #dcdcdc);
+  border: 1px solid #ccc;
+  font-size: 11px;
+  padding: 5px 7px;
+  text-align: left;
+}
+.jobs td { border: 1px solid #ddd; padding: 5px 7px; }
+.badge {
+  background: linear-gradient(#8bc34a, #689f38);
+  color: #fff;
+  border-radius: 9px;
+  padding: 2px 7px;
+  font-size: 10px;
+}
+.badge.closed { background: linear-gradient(#bbb, #999); }
+.badge.hot { background: linear-gradient(#ff9800, #ef6c00); }
+.btn {
+  background: linear-gradient(#5c9ded, #3b7bd4);
+  border: 1px outset #2d5b93;
+  border-radius: 3px;
+  color: #fff;
+  padding: 5px 13px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  outline: none;
+}
+.btn.small { padding: 2px 7px; font-size: 10px; text-decoration: none; }
+.btn:hover { background: linear-gradient(#6caefd, #4b8be4); width: 105%; }
+form label { display: block; margin: 7px 0; color: #777; }
+form input, form textarea {
+  border: 1px inset #ccc;
+  padding: 3px;
+  font-size: 12px;
+  width: 250px;
+}
